@@ -80,32 +80,47 @@ def project_gdf(gdf, to_crs=None, to_latlong=False):
     else:
         if to_latlong:
             # if to_latlong is True, project the gdf to latlong
-            latlong_crs = {'init':'epsg:4326'}
+            latlong_crs = {'init': 'epsg:4326'}
             projected_gdf = gdf.to_crs(latlong_crs)
             log('Projected the GeoDataFrame "{}" to EPSG 4326 in {:,.2f} seconds'.format(gdf.gdf_name, time.time()-start_time))
         else:
             # else, project the gdf to UTM
             # if GeoDataFrame is already in UTM, just return it
-            if (not gdf.crs is None) and ('proj' in gdf.crs) and (gdf.crs['proj'] == 'utm'):
+            if (gdf.crs is not None) and (
+                    'proj' in gdf.crs) and (gdf.crs['proj'] == 'utm'):
                 return gdf
 
             # calculate the centroid of the union of all the geometries in the GeoDataFrame
-            avg_longitude = gdf['geometry'].unary_union.centroid.x
-
-            # calculate the UTM zone from this avg longitude and define the UTM CRS to project
-            utm_zone = int(math.floor((avg_longitude + 180) / 6.) + 1)
-            utm_crs = {'datum': 'NAD83',
-                       'ellps': 'GRS80',
-                       'proj' : 'utm',
-                       'zone' : utm_zone,
-                       'units': 'm'}
+            geo_centroid = gdf['geometry'].unary_union.centroid
+            utm_epsg = epsg_from_uts(geo_centroid.y, geo_centroid.x)
+            utm_crs = {'init': 'epsg:{}'.format(utm_epsg)}
 
             # project the GeoDataFrame to the UTM CRS
             projected_gdf = gdf.to_crs(utm_crs)
-            log('Projected the GeoDataFrame "{}" to UTM-{} in {:,.2f} seconds'.format(gdf.gdf_name, utm_zone, time.time()-start_time))
+            log('Projected the GeoDataFrame "{}" to {} in {:,.2f} seconds'.format(gdf.gdf_name, utm_epsg, time.time()-start_time))
 
     projected_gdf.gdf_name = gdf.gdf_name
     return projected_gdf
+
+
+def epsg_from_uts(lat, lon):
+
+    epsg_code = 32600
+
+    if lat < 0:
+        epsg_code += 100
+
+    if abs(lon) > 180:
+        raise ValueError("Coordinates not within UTM zone limits")
+
+    lon_zone = int(math.floor((lon + 180) / 6.))
+
+    if lon_zone != 60:
+        lon_zone += 1
+
+    epsg_code += lon_zone
+
+    return epsg_code
 
 
 def project_graph(G, to_crs=None):
@@ -128,7 +143,7 @@ def project_graph(G, to_crs=None):
     start_time = time.time()
 
     # create a GeoDataFrame of the nodes, name it, convert osmid to str
-    nodes = {node:data for node, data in G_proj.nodes(data=True)}
+    nodes = {node: data for node, data in G_proj.nodes(data=True)}
     gdf_nodes = gpd.GeoDataFrame(nodes).T
     gdf_nodes.crs = G_proj.graph['crs']
     gdf_nodes.gdf_name = '{}_nodes'.format(G_proj.name)

@@ -98,7 +98,7 @@ def get_from_cache(url):
             log('Retrieved response from cache file "{}" for URL "{}"'.format(cache_path_filename, url))
             return response_json
 
-            
+
 def get_http_headers(user_agent=None, referer=None):
     """
     Update the default requests HTTP headers with OSMnx info.
@@ -114,15 +114,15 @@ def get_http_headers(user_agent=None, referer=None):
     -------
     headers : dict
     """
-    
+
     if user_agent is None:
         user_agent = 'Python OSMnx package (https://github.com/gboeing/osmnx)'
     if referer is None:
         referer = 'Python OSMnx package (https://github.com/gboeing/osmnx)'
-        
+
     headers = requests.utils.default_headers()
     headers.update({'User-Agent': user_agent, 'referer': referer})
-    return headers            
+    return headers
 
 
 def get_pause_duration(recursive_delay=5, default_duration=10):
@@ -396,7 +396,7 @@ def gdf_from_place(query, gdf_name=None, which_result=1, buffer_dist=None):
         gdf.crs = {'init':'epsg:4326'}
 
         # if buffer_dist was passed in, project the geometry to UTM, buffer it in meters, then project it back to lat-long
-        if not buffer_dist is None:
+        if buffer_dist is not None:
             gdf_utm = project_gdf(gdf)
             gdf_utm['geometry'] = gdf_utm['geometry'].buffer(buffer_dist)
             gdf = project_gdf(gdf_utm, to_latlong=True)
@@ -980,16 +980,16 @@ def truncate_graph_polygon(G, polygon, retain_all=False, truncate_by_edge=False,
     retain_all : bool
         if True, return the entire graph even if it is not connected
     truncate_by_edge : bool
-        if True retain node if it's outside polygon but at least one of node's neighbors 
+        if True retain node if it's outside polygon but at least one of node's neighbors
         are within polygon (NOT CURRENTLY IMPLEMENTED)
     quadrat_width : numeric
-        passed on to intersect_index_quadrats: the linear length (in degrees) of the quadrats 
+        passed on to intersect_index_quadrats: the linear length (in degrees) of the quadrats
         with which to cut up the geometry (default = 0.025, approx 2km at NYC's latitude)
     min_num : int
-        passed on to intersect_index_quadrats: the minimum number of linear quadrat lines 
+        passed on to intersect_index_quadrats: the minimum number of linear quadrat lines
         (e.g., min_num=3 would produce a quadrat grid of 4 squares)
     buffer_amount : numeric
-        passed on to intersect_index_quadrats: buffer the quadrat grid lines by 
+        passed on to intersect_index_quadrats: buffer the quadrat grid lines by
         quadrat_width times buffer_amount
 
     Returns
@@ -1509,13 +1509,13 @@ def graph_from_place(query, network_type='all_private', simplify=True, retain_al
                      truncate_by_edge=False, name='unnamed', which_result=1, buffer_dist=None, timeout=180, memory=None, max_query_area_size=50*1000*50*1000, clean_periphery=True):
     """
     Create a networkx graph from OSM data within the spatial boundaries of some geocodable place(s).
-    
+
     The query must be geocodable and OSM must have polygon boundaries for the geocode result. If OSM
     does not have a polygon for this place, you can instead get its street network using the
     graph_from_address function, which geocodes the place name to a point and gets the network within
     some distance of that point. Alternatively, you might try to vary the which_result parameter to
     use a different geocode result. For example, the first geocode result (ie, the default) might
-    resolve to a point geometry, but the second geocode result for this query might resolve to a 
+    resolve to a point geometry, but the second geocode result for this query might resolve to a
     polygon, in which case you can use graph_from_place with which_result=2.
 
     Parameters
